@@ -1,0 +1,14 @@
+{
+  "domain": "pasevsu_gmail_rules",
+  "name": "PasevSU Gmail Rule Manager",
+  "version": "0.5.0",
+  "documentation": "https://github.com/PasevSU/PasevSU-Gmail-Rule-Manager",
+  "requirements": [
+    "google-api-python-client>=2.140.0",
+    "google-auth>=2.30.0"
+  ],
+  "codeowners": [],
+  "config_flow": true,
+  "iot_class": "cloud_polling",
+  "dependencies": []
+}

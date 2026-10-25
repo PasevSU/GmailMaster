@@ -1,0 +1,52 @@
+{
+  "filter": [
+    {
+      "query": "to:google.com",
+      "labelsToAdd": [
+        "INBOX/Google"
+      ],
+      "mark_read": false,
+      "move": false,
+      "lifecycle": {
+        "enabled": true,
+        "days": 30,
+        "action": "trash"
+      }
+    },
+    {
+      "query": "google.com",
+      "labelsToAdd": [
+        "INBOX/Google"
+      ],
+      "mark_read": false,
+      "move": false,
+      "lifecycle": {
+        "enabled": false
+      }
+    },
+    {
+      "query": "from:accounts.google.com",
+      "labelsToAdd": [
+        "INBOX/Google"
+      ],
+      "mark_read": false,
+      "move": false,
+      "lifecycle": {
+        "enabled": false
+      }
+    },
+    {
+      "query": "from:linkedin.com",
+      "labelsToAdd": [
+        "INBOX/Linkedin"
+      ],
+      "mark_read": false,
+      "move": false,
+      "lifecycle": {
+        "enabled": true,
+        "days": 7,
+        "action": "trash"
+      }
+    }
+  ]
+}

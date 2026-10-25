@@ -1,0 +1,9 @@
+{
+  "_comment": "Копирайте този файл като imap_settings.json и попълнете стойностите. Паролата НЕ се пише тук — задава се в променлива на средата, чието име е в password_env.",
+  "host": "imap.gmail.com",
+  "port": 993,
+  "user": "pasevdenislav@gmail.com",
+  "password_env": "GMAIL_APP_PASSWORD",
+  "mailbox": "Forensic Restore",
+  "ssl": true
+}

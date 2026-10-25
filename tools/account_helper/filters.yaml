@@ -1,0 +1,47 @@
+# ==========================================
+# ФИЛТРИ ЗА GMAIL ОТЧЕТИТЕ
+# ==========================================
+# Активен е само филтърът по домейни. Останалите са изключени.
+
+# 1. Филтър по домейни (търси във From, To, Cc, Bcc)
+# Тук са извлечени всички уникални домейни от предоставения списък с имейли.
+domains:
+  - "stadtdo.de"
+  - "diakoniedortmund.de"
+  - "institut-bartoschek.de"
+  - "systemischeloesungenbggbr.de"
+  #  - "kinderschutzzentrum-dortmund.de"
+  #  - "emschertal-grundschule-edu.de"
+  - "martinswerk-dorlar.de"
+  - "ptv-dortmund.de"
+  - "lwl.org"
+  #  - "mfa.bg"
+  - "ldi.nrw.de"
+  - "ag-dortmund.nrw.de"
+  #  - "bfdi.bund.de"
+  - "diakonie-rwl.de"
+#  - "kanzlei-simakin.de"
+#  - "schoepper-und-kollegen.de"
+#  - "ombudschaft-nrw.de"
+#  - "wdr.de"
+#  - "vvps-do.de"
+
+# 2. Филтър "От дата - До дата" (формат: YYYY-MM-DD)
+# date_range:
+#   from: "2024-01-01"
+#   to: null
+
+# 3. Показвай само непрочетени имейли
+# unread_only: false
+
+# 4. Показвай само имейли с прикачени файлове
+# has_attachment: false
+
+# 5. Търсене на конкретна дума/фраза в ТЕМАТА
+# subject_contains: null
+
+# 6. Търсене на конкретен текст в полето "ОТ"
+# from_contains: null
+
+# 7. Показвай само имейли от конкретна папка/етикет
+# label: null
