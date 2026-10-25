@@ -13,6 +13,9 @@ def load_rules(path):
             raise ValueError(f"Invalid query in rule {index}")
         if not isinstance(rule.get("labelsToAdd", []), list) or not all(isinstance(x,str) and x for x in rule.get("labelsToAdd", [])):
             raise ValueError(f"Invalid labelsToAdd in rule {index}")
+        for flag in ("move", "mark_read"):
+            if flag in rule and type(rule[flag]) is not bool:
+                raise ValueError(f"Invalid {flag} in rule {index}")
         life = rule.get("lifecycle") or {}
         if not isinstance(life, dict): raise ValueError(f"Invalid lifecycle in rule {index}")
         if life.get("enabled") and (type(life.get("days")) is not int or life["days"] < 1):
@@ -47,6 +50,8 @@ def run_new_messages(service, rules, state, message_ids, dry_run=True):
             if pages_scanned >= 20:
                 outcome["truncated"] = True
                 break
+        if outcome["truncated"]:
+            raise RuntimeError("Rule query exceeded scan budget; refusing partial processing and cursor advancement")
         for mid in sorted(matched):
             try: message = get_message(service, mid, "metadata")
             except Exception: continue # may have been deleted between events

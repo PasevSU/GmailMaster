@@ -24,4 +24,5 @@ class GmailNewMailSensor(SensorEntity):
                 "last_new_mail":self.runtime.last_new_mail,
                 "last_result":self.runtime.last_result,
                 "history_initialized":bool(self.runtime.history_id),
-                "last_error":self.runtime.last_error}
+                "last_error":self.runtime.last_error,
+                "recovery_required":self.runtime.recovery_required}

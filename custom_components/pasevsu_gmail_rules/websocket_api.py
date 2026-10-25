@@ -62,6 +62,9 @@ def register(hass):
     websocket_api.async_register_command(hass, ws_inspect)
     websocket_api.async_register_command(hass, ws_digest)
     websocket_api.async_register_command(hass, ws_status)
+    websocket_api.async_register_command(hass, ws_raw_details)
+    websocket_api.async_register_command(hass, ws_thread)
+    websocket_api.async_register_command(hass, ws_recover)
 
 @websocket_api.websocket_command({vol.Required("type"): "pasevsu_gmail/status", vol.Required("entry_id"): str})
 @websocket_api.async_response
@@ -76,3 +79,34 @@ async def ws_status(hass, connection, msg):
     connection.send_result(msg["id"], {"new_count":runtime.new_count,"last_check":runtime.last_check,
        "last_new_mail":runtime.last_new_mail,"last_error":runtime.last_error,
        "last_result":runtime.last_result,"history_initialized":bool(runtime.history_id)})
+
+
+@websocket_api.websocket_command({vol.Required("type"):"pasevsu_gmail/raw_details",vol.Required("entry_id"):str,vol.Required("message_id"):str})
+@websocket_api.async_response
+async def ws_raw_details(hass,connection,msg):
+    if not connection.user.is_admin:
+        connection.send_error(msg["id"],"unauthorized","Administrator required");return
+    runtime=hass.data[DOMAIN].get(msg["entry_id"])
+    if runtime is None:connection.send_error(msg["id"],"not_found","Entry not found");return
+    try:connection.send_result(msg["id"],await hass.async_add_executor_job(runtime.raw_details,msg["message_id"]))
+    except Exception:connection.send_error(msg["id"],"gmail_error","RAW retrieval failed; consult HA logs")
+
+@websocket_api.websocket_command({vol.Required("type"):"pasevsu_gmail/thread",vol.Required("entry_id"):str,vol.Required("thread_id"):str})
+@websocket_api.async_response
+async def ws_thread(hass,connection,msg):
+    if not connection.user.is_admin:
+        connection.send_error(msg["id"],"unauthorized","Administrator required");return
+    runtime=hass.data[DOMAIN].get(msg["entry_id"])
+    if runtime is None:connection.send_error(msg["id"],"not_found","Entry not found");return
+    try:connection.send_result(msg["id"],await hass.async_add_executor_job(runtime.thread,msg["thread_id"]))
+    except Exception:connection.send_error(msg["id"],"gmail_error","Thread retrieval failed; consult HA logs")
+
+@websocket_api.websocket_command({vol.Required("type"):"pasevsu_gmail/recover",vol.Required("entry_id"):str})
+@websocket_api.async_response
+async def ws_recover(hass,connection,msg):
+    if not connection.user.is_admin:
+        connection.send_error(msg["id"],"unauthorized","Administrator required");return
+    runtime=hass.data[DOMAIN].get(msg["entry_id"])
+    if runtime is None:connection.send_error(msg["id"],"not_found","Entry not found");return
+    try:connection.send_result(msg["id"],await runtime.recover())
+    except Exception:connection.send_error(msg["id"],"recovery_error","Reconciliation failed; cursor unchanged")

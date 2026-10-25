@@ -27,3 +27,21 @@ def raw_digest(msg):
     data = base64.urlsafe_b64decode(msg.get("raw", "") + "===")
     return {"size":len(data), "sha256":hashlib.sha256(data).hexdigest(),
             "sha512":hashlib.sha512(data).hexdigest()}
+
+
+def raw_message_details(msg, max_preview=250000):
+    """RFC822 parsed in original header order; binary bytes never persisted."""
+    from email import policy
+    from email.parser import BytesParser
+    data=base64.urlsafe_b64decode(msg.get("raw","")+"===")
+    parsed=BytesParser(policy=policy.default).parsebytes(data)
+    sep=data.find(b"\r\n\r\n")
+    if sep<0:sep=data.find(b"\n\n")
+    headers=[]
+    for name,value in parsed.raw_items():
+        headers.append({"name":name,"value":value})
+    return {"id":msg.get("id"),"size":len(data),"sha256":hashlib.sha256(data).hexdigest(),
+      "sha512":hashlib.sha512(data).hexdigest(),"headers":headers,
+      "raw_preview":data[:max_preview].decode("utf-8",errors="replace"),
+      "preview_truncated":len(data)>max_preview,
+      "note":"Raw preview is decoded for display; use hashes for byte-level identity. Header order preserved."}

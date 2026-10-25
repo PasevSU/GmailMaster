@@ -5,7 +5,7 @@ from googleapiclient.errors import HttpError
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.storage import Store
 from .const import DOMAIN
-from .gmail_client import service_from_token, list_messages, list_labels, get_message, profile, history_since
+from .gmail_client import service_from_token, list_messages, list_labels, get_message, profile, history_since, list_recent_ids, get_thread
 from .artifact_inspector import inspect_message, raw_digest, attachment_digest
 from .rules_engine import load_rules, run_new_messages, evaluate_lifecycle
 from . import websocket_api
@@ -20,7 +20,7 @@ class Runtime:
         self.cursor_store=Store(hass,1,f"{DOMAIN}_{entry.entry_id}_cursor")
         self.state={};self.history_id=None;self.last_result={}
         self.new_count=0;self.last_check=None;self.last_new_mail=None;self.last_error=None
-        self.sensor=None;self._running=False
+        self.sensor=None;self._running=False;self.recovery_required=False
     @property
     def settings(self): return {**self.entry.data,**self.entry.options}
     def _service(self): return service_from_token(self.settings["token_path"])
@@ -37,6 +37,11 @@ class Runtime:
         return {"messages":rows,"next_page_token":result.get("nextPageToken")}
     def labels(self): return list_labels(self._service())
     def inspect(self,mid): return inspect_message(get_message(self._service(),mid,"full"))
+    def thread(self,thread_id):
+        return get_thread(self._service(),thread_id)
+    def raw_details(self,mid):
+        from .artifact_inspector import raw_message_details
+        return raw_message_details(get_message(self._service(),mid,"raw"))
     def digest(self,mid,aid=None):
         service=self._service()
         return attachment_digest(service,mid,aid) if aid else raw_digest(get_message(service,mid,"raw"))
@@ -52,7 +57,7 @@ class Runtime:
         except HttpError as exc:
             if exc.resp.status==404:
                 # Cursor expired: do not claim that no messages arrived.
-                return {"cursor":latest,"cursor_expired":True,"new_ids":[]}
+                return {"cursor":self.history_id,"cursor_expired":True,"new_ids":[],"recovery_required":True}
             raise
         return {"cursor":cursor,"new_ids":ids}
     def process_sync(self,ids,life_only=False):
@@ -71,7 +76,11 @@ class Runtime:
             ids=result.get("new_ids",[])
             self.new_count=len(ids)
             self.last_check=datetime.now(timezone.utc).isoformat()
-            self.last_error="history cursor expired; resynchronized" if result.get("cursor_expired") else None
+            self.recovery_required=bool(result.get("recovery_required"))
+            if self.recovery_required:
+                self.last_error="Gmail history cursor expired; manual reconciliation required. Cursor preserved."
+                return
+            self.last_error=None
             if ids:
                 # Process before advancing cursor. Failed processing is retried next poll.
                 self.last_result=await self.hass.async_add_executor_job(self.process_sync,ids)
@@ -86,6 +95,27 @@ class Runtime:
         finally:
             if self.sensor:self.sensor.async_write_ha_state()
             self._running=False
+    async def recover(self):
+        """Explicit bounded backfill: never silently reset an expired cursor."""
+        if self._running: raise RuntimeError("Gmail monitor busy")
+        self._running=True
+        try:
+            def collect():
+                service=self._service()
+                before=str(profile(service)["historyId"])
+                ids=list_recent_ids(service)
+                return before,ids
+            before,ids=await self.hass.async_add_executor_job(collect)
+            self.last_result=await self.hass.async_add_executor_job(self.process_sync,ids)
+            if not self.settings.get("dry_run",True):await self.store.async_save(self.state)
+            self.history_id=before
+            await self.cursor_store.async_save({"history_id":before})
+            self.recovery_required=False
+            self.last_error=None
+            return {"reconciled":len(ids),"cursor":before,"result":self.last_result}
+        finally:
+            self._running=False
+            if self.sensor:self.sensor.async_write_ha_state()
     async def daily_lifecycle(self,_now=None):
         if self._running:return
         self._running=True
