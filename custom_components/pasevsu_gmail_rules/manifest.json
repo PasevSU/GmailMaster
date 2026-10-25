@@ -1,7 +1,7 @@
 {
   "domain": "pasevsu_gmail_rules",
   "name": "PasevSU Gmail Rule Manager",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "documentation": "https://github.com/PasevSU/PasevSU-Gmail-Rule-Manager",
   "requirements": [
     "google-api-python-client>=2.140.0",

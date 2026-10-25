@@ -84,3 +84,17 @@ def history_since(service, history_id):
         token = result.get("nextPageToken")
         if not token: break
     return latest, sorted(ids)
+
+
+def get_thread(service, thread_id):
+    return execute(service.users().threads().get(userId="me", id=thread_id, format="metadata"))
+
+def list_recent_ids(service, max_pages=20):
+    """Bounded reconciliation; raise rather than silently skipping older mail."""
+    ids=[]; token=None
+    for _ in range(max_pages):
+        page=list_messages(service, "ALL", "", token, 500)
+        ids.extend(x["id"] for x in page.get("messages", []))
+        token=page.get("nextPageToken")
+        if not token:return ids
+    raise RuntimeError("Recovery requires more than 10000 messages; cursor remains unchanged")
